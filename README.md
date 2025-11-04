@@ -23,3 +23,10 @@ O objetivo do jogador é responder perguntas de diferentes níveis, usar habilid
   - Sem habilidades.  
   - Acerto multiplica x5 a pontuação final.  
   - Erro zera a pontuação.
+
+## Membros
+- [Luca Ribeiro Albuquerque](https://github.com/LucaAlbuquerque) - lra3@cesar.school
+- [Ricardo Machado Valadares Lins](https://github.com/ricardomvlins) - rmvl@cesar.school
+- [Victor Tien Fah Uen](https://github.com/victor-uen) - vtfu@cesar.school
+
+
