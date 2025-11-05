@@ -3,7 +3,6 @@
 #include <string.h>
 #include <time.h>
 
-#define MAX_PERGUNTAS 60
 #define MAX_ALTERNATIVAS 4
 #define MAX_NOME 50
 
@@ -11,9 +10,25 @@ typedef struct {
     char enunciado[200];
     char alternativas[MAX_ALTERNATIVAS][100];
     int correta;
-    int nivel; // 1 = fácil, 2 = médio, 3 = difícil
     int pulada; //começa em 0
-} Pergunta;
+    PerguntaFacil *prox;
+} PerguntaFacil;
+
+typedef struct {
+    char enunciado[200];
+    char alternativas[MAX_ALTERNATIVAS][100];
+    int correta;
+    int pulada; //começa em 0
+    PerguntaMedia *prox;
+} PerguntaMedia;
+
+typedef struct {
+    char enunciado[200];
+    char alternativas[MAX_ALTERNATIVAS][100];
+    int correta;
+    int pulada; //começa em 0
+    PerguntaDif *prox;
+} PerguntaDif;
 
 typedef struct {
     char nome[MAX_NOME];
@@ -25,7 +40,7 @@ typedef struct {
 } Jogador;
 
 // Carregar perguntas
-int carregarPerguntas(const char* arquivo, Pergunta perguntas[], int maxPerguntas) {
+int carregarPerguntas(const char* arquivo, Pergunta perguntas[]) {
     FILE* f = fopen(arquivo, "r");
     if (!f) {
         printf("Erro ao abrir o arquivo de perguntas.\n");
@@ -66,6 +81,7 @@ void embaralhar(Pergunta perguntas[], int total) {
         perguntas[j] = tmp;
     }
 }
+
 
 // Criar jogador
 Jogador criarJogador(const char* nome) {
@@ -141,8 +157,10 @@ void jogarPartida(Jogador* jogador, Pergunta perguntas[], int total) {
 }
 
 int main() {
-    Pergunta perguntas[MAX_PERGUNTAS];
-    int total = carregarPerguntas("C:\\Users\\lucar\\OneDrive\\Anexos\\teste jogo aed\\joguinho.txt", perguntas, MAX_PERGUNTAS);
+    PerguntaFacil *headFacil = NULL;
+    PerguntaMedia *headFacil = NULL;
+    PerguntaDif *headDif = NULL;
+    int total = carregarPerguntas("C:\\Users\\lucar\\OneDrive\\Anexos\\teste jogo aed\\joguinho.txt", perguntas);
     if (total == 0) return 1;
 
     embaralhar(perguntas, total);
