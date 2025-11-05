@@ -3,48 +3,157 @@
 #include <string.h>
 #include <time.h>
 
-//==== CONSTANTES DO JOGO ====
+#define MAX_PERGUNTAS 60
+#define MAX_ALTERNATIVAS 4
+#define MAX_NOME 50
 
-// constantes do jogador
-#define TAM_NOME 20
-
-// constantes das perguntas
-#define TAM_ENUNC 200
-#define TAM_ALT 30
-#define ALT 4
-
-
-//==== STRUCTS ====
-
-typedef struct Jogador{
-    char nome[TAM_NOME];
-    int vidas; //3
-    int pulos; //3
-    int cartas; //1
-    int coringa; //1
-    float score; //começa em 0.0 reais
-    float mult; //começa em 1.0X
-} Jogador;
-
-typedef enum {
-    HISTORIA,
-    GEOGRAFIA,
-    CIENCIA,
-    ESPORTE,
-    ENTRETENIMENTO
-} Tema;
-
-typedef struct Pergunta{ //Lista Circular Simples
-    Tema tema;
-    char enunciado[TAM_ENUNC];
-    char alternativa[ALT][TAM_ALT];
-    int resposta;
-    int tempo; //15 ou 30 segundos
-    struct Pergunta *prox;
+typedef struct {
+    char enunciado[200];
+    char alternativas[MAX_ALTERNATIVAS][100];
+    int correta;
+    int nivel; // 1 = fácil, 2 = médio, 3 = difícil
+    int pulada; //começa em 0
 } Pergunta;
 
-typedef struct Ranking { //Lista Encadeada Simples
-    char nome[TAM_NOME];
-    float pontuacao;
-    struct Ranking *prox;
-} Ranking;
+typedef struct {
+    char nome[MAX_NOME];
+    int vidas;
+    int pontuacao;
+    int pulos;
+    int coringas;
+    int multiplicador;
+} Jogador;
+
+// Carregar perguntas
+int carregarPerguntas(const char* arquivo, Pergunta perguntas[], int maxPerguntas) {
+    FILE* f = fopen(arquivo, "r");
+    if (!f) {
+        printf("Erro ao abrir o arquivo de perguntas.\n");
+        return 0;
+    }
+
+    int i = 0;
+    while (i < maxPerguntas) {
+        if (!fgets(perguntas[i].enunciado, sizeof(perguntas[i].enunciado), f)) break;
+        perguntas[i].enunciado[strcspn(perguntas[i].enunciado, "\n")] = 0; // remover \n
+
+        for (int j = 0; j < MAX_ALTERNATIVAS; j++) {
+            if (!fgets(perguntas[i].alternativas[j], sizeof(perguntas[i].alternativas[j]), f)) break;
+            perguntas[i].alternativas[j][strcspn(perguntas[i].alternativas[j], "\n")] = 0;
+        }
+
+        char linha[20];
+        if (!fgets(linha, sizeof(linha), f)) break;
+        perguntas[i].correta = atoi(linha);
+
+        if (!fgets(linha, sizeof(linha), f)) break;
+        perguntas[i].nivel = atoi(linha);
+
+        i++;
+    }
+
+    fclose(f);
+    return i;
+}
+
+// Embaralhar perguntas
+void embaralhar(Pergunta perguntas[], int total) {
+    srand(time(NULL));
+    for (int i = total - 1; i > 0; i--) {
+        int j = rand() % (i + 1);
+        Pergunta tmp = perguntas[i];
+        perguntas[i] = perguntas[j];
+        perguntas[j] = tmp;
+    }
+}
+
+// Criar jogador
+Jogador criarJogador(const char* nome) {
+    Jogador j;
+    strcpy(j.nome, nome);
+    j.vidas = 3;
+    j.pontuacao = 0;
+    j.pulos = 2;
+    j.coringas = 1;
+    j.multiplicador = 1;
+    return j;
+}
+
+// Atualizar pontuação
+void atualizarPontuacao(Jogador* j, int acerto) {
+    if (acerto) {
+        j->pontuacao += 100 * j->multiplicador;
+        j->multiplicador++;
+    } else {
+        j->vidas--;
+        j->multiplicador = 1;
+    }
+    printf("\nPontuação atual: %d\n", j->pontuacao);
+}
+
+// Jogar um nível
+void jogarNivel(Jogador* jogador, Pergunta perguntas[], int total, int nivel) {
+    printf("\n--- NÍVEL %d ---\n", nivel);
+    int respondidas = 0;
+    for (int i = 0; i < total && respondidas < 4; i++) {
+        if (perguntas[i].nivel != nivel) continue;
+
+        printf("\n%s\n", perguntas[i].enunciado);
+        for (int j = 0; j < MAX_ALTERNATIVAS; j++) {
+            printf("%d) %s\n", j + 1, perguntas[i].alternativas[j]);
+        }
+
+        int resposta;
+        printf("Digite: \n1 para alternativa 1 \n2 para alternativa 2 \n3 para alternativa 3 \n4 para alternativa 4 \nP para pular (Pulos restantes: %d)\nD para ver uma dica \nC para uma ajuda coringa \n", jogador->pulos);
+        scanf("%d", &resposta);
+
+        if (resposta == 0 && jogador->pulos > 0) {
+            jogador->pulos--;
+            printf("Pulou! Pergunta será trocada.\n");
+            i--; // repete uma outra pergunta do mesmo nível
+            // Preciso alteração mudar Perguntas para ser uma lista circular simples. Quando o jogador usa o pulo, a pergunta atual é deletada e a lista ajustada. E o jogador responde uma pergunta de mesmo nível.
+            continue;
+        }
+
+        if (resposta == perguntas[i].correta) {
+            printf("Correta!\n");
+            atualizarPontuacao(jogador, 1);
+        } else {
+            printf("Errada! A certa era %d\n", perguntas[i].correta);
+            atualizarPontuacao(jogador, 0);
+            if (jogador->vidas <= 0) {
+                printf("Sem vidas restantes!\n");
+                return;
+            }
+        }
+        respondidas++;
+    }
+}
+
+// Jogar partida completa
+void jogarPartida(Jogador* jogador, Pergunta perguntas[], int total) {
+    printf("\nBem vindo %s! Vejo que você está no Rumo ao Bilhão!\n", jogador->nome);
+    for (int nivel = 1; nivel <= 3; nivel++) {
+        jogarNivel(jogador, perguntas, total, nivel);
+        if (jogador->vidas <= 0) break;
+    }
+    printf("\nFim da partida! Pontuação final: %d\n", jogador->pontuacao);
+}
+
+int main() {
+    Pergunta perguntas[MAX_PERGUNTAS];
+    int total = carregarPerguntas("C:\\Users\\lucar\\OneDrive\\Anexos\\teste jogo aed\\joguinho.txt", perguntas, MAX_PERGUNTAS);
+    if (total == 0) return 1;
+
+    embaralhar(perguntas, total);
+
+    char nome[MAX_NOME];
+    printf("Digite seu nome: ");
+    scanf(" %[^\n]", nome);
+
+    Jogador jogador = criarJogador(nome);
+    jogarPartida(&jogador, perguntas, total);
+    
+    printf("Obrigado por jogar, %s!\n", jogador.nome);
+    return 0;
+}
