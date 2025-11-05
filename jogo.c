@@ -11,7 +11,7 @@ typedef struct {
     char alternativas[MAX_ALTERNATIVAS][100];
     int correta;
     int pulada; //começa em 0
-    PerguntaFacil *prox;
+    struct PerguntaFacil *prox;
 } PerguntaFacil;
 
 typedef struct {
@@ -19,7 +19,7 @@ typedef struct {
     char alternativas[MAX_ALTERNATIVAS][100];
     int correta;
     int pulada; //começa em 0
-    PerguntaMedia *prox;
+    struct PerguntaMedia *prox;
 } PerguntaMedia;
 
 typedef struct {
@@ -27,7 +27,7 @@ typedef struct {
     char alternativas[MAX_ALTERNATIVAS][100];
     int correta;
     int pulada; //começa em 0
-    PerguntaDif *prox;
+    struct PerguntaDif *prox;
 } PerguntaDif;
 
 typedef struct {
@@ -156,22 +156,37 @@ void jogarPartida(Jogador* jogador, Pergunta perguntas[], int total) {
     printf("\nFim da partida! Pontuação final: %d\n", jogador->pontuacao);
 }
 
+
 int main() {
-    PerguntaFacil *headFacil = NULL;
-    PerguntaMedia *headFacil = NULL;
-    PerguntaDif *headDif = NULL;
-    int total = carregarPerguntas("C:\\Users\\lucar\\OneDrive\\Anexos\\teste jogo aed\\joguinho.txt", perguntas);
-    if (total == 0) return 1;
+    int menu = 9;
+    while (menu != 0) {
+        printf("1- Jogar\n\2- Ver Ranking\n3- Ver Instruções\n0- Sair\n");
+        scanf("%d", &menu);
 
-    embaralhar(perguntas, total);
+        if (menu == 1) {
+            PerguntaFacil *headFacil = NULL;
+            PerguntaMedia *headMedia = NULL;
+            PerguntaDif *headDif = NULL;
+            Pergunta perguntas[MAX_PERGUNTAS];
+            int total = carregarPerguntas("C:\\Users\\lucar\\OneDrive\\Anexos\\teste jogo aed\\joguinho.txt", perguntas, MAX_PERGUNTAS);
+            if (total == 0) return 1;
 
-    char nome[MAX_NOME];
-    printf("Digite seu nome: ");
-    scanf(" %[^\n]", nome);
+            embaralhar(perguntas, total);
 
-    Jogador jogador = criarJogador(nome);
-    jogarPartida(&jogador, perguntas, total);
-    
-    printf("Obrigado por jogar, %s!\n", jogador.nome);
+            char nome[MAX_NOME];
+            printf("Digite seu nome: ");
+            scanf(" %[^\n]", nome);
+
+            Jogador jogador = criarJogador(nome);
+            jogarPartida(&jogador, perguntas, total);
+        }
+        else if (menu == 2) {
+            //Ranking
+        }
+        else if (menu == 3) {
+            //Ver Instruções
+        }
+    }
+    printf("Obrigado por jogar\n");
     return 0;
 }
